@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explain What You Learned | onTrack</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f3ed;
+            color: #24332b;
+        }
+
+        header {
+            background: white;
+            padding: 22px 8%;
+            border-bottom: 1px solid #e5e5df;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        header span { color: #39845c; }
+
+        main {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 24px;
+        }
+
+        a { color: #39845c; }
+
+        .card {
+            margin-top: 24px;
+            background: white;
+            border: 1px solid #e5e5df;
+            border-radius: 18px;
+            padding: 32px;
+        }
+
+        label {
+            display: block;
+            margin: 20px 0 8px;
+            font-weight: bold;
+        }
+
+        input, textarea {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #cfd7d0;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 170px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        button {
+            margin-top: 18px;
+            padding: 13px 20px;
+            background: #39845c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover { background: #286943; }
+
+        button:disabled {
+            opacity: 0.65;
+            cursor: wait;
+        }
+
+        #message {
+            margin-top: 18px;
+            line-height: 1.7;
+            white-space: pre-line;
+            overflow-wrap: anywhere;
+        }
+
+        .hint {
+            color: #65736a;
+            line-height: 1.6;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: #e5e5df;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 33.33%;
+            height: 100%;
+            background: #39845c;
+            border-radius: 10px;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 18px;
+            background: #f5f3ed;
+            border-radius: 12px;
+        }
+
+        .score {
+            font-size: 28px;
+            font-weight: bold;
+            color: #39845c;
+        }
+
+        @media (max-width: 600px) {
+            main { padding: 16px; margin: 24px auto; }
+            .card { padding: 22px; }
+        }
+    </style>
+</head>
+
+<body>
+    <header>on<span>Track</span></header>
+
+    <main>
+        <a href="stations.html">← Back to stations</a>
+
+        <section class="card">
+            <p><strong>STATION 1 · YOUR TURN TO TEACH</strong></p>
+
+            <div class="progress-container">
+                <div class="progress-bar"></div>
+            </div>
+
+            <p class="hint">Station 1 of 3 · Learning in progress</p>
+
+            <h1>Explain what you learned</h1>
+
+            <p class="hint">
+                Imagine you're teaching this concept to a friend.
+                Explain it in your own words, using an example if you can.
+            </p>
+
+            <form id="explanationForm">
+                <label for="topic">What topic did you study?</label>
+
+                <input
+                    id="topic"
+                    name="topic"
+                    placeholder="e.g. Photosynthesis"
+                    maxlength="300"
+                    required
+                >
+
+                <label for="explanation">Explain the concept</label>
+
+                <textarea
+                    id="explanation"
+                    name="explanation"
+                    placeholder="I learned that..."
+                    maxlength="10000"
+                    required
+                ></textarea>
+
+                <p id="wordCount">Words: 0</p>
+
+                <p class="hint">
+                    Tip: Aim for at least 30 words. Explain how it works
+                    and give an example.
+                </p>
+
+                <button id="submitButton" type="submit">
+                    Submit explanation
+                </button>
+            </form>
+
+            <p id="message" aria-live="polite"></p>
+
+            <section id="result" class="result" hidden>
+                <h2>Your evaluation</h2>
+                <p id="score" class="score"></p>
+                <p id="status"></p>
+                <p><strong>Feedback</strong></p>
+                <p id="feedback"></p>
+                <p><strong>What you explained well</strong></p>
+                <ul id="strengths"></ul>
+                <p><strong>Concepts to improve</strong></p>
+                <ul id="missingConcepts"></ul>
+            </section>
+        </section>
+    </main>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const isLocalHost =
+            window.location.hostname === "127.0.0.1" ||
+            window.location.hostname === "localhost";
+
+        // When testing locally (127.0.0.1:5500), default to local backend (127.0.0.1:5000)
+        // with automatic fallback to Render (or vice versa). Can be overridden with ?api=
+        const PRIMARY_API_URL =
+            urlParams.get("api") ||
+            (isLocalHost
+                ? "http://127.0.0.1:5000/evaluate"
+                : "https://esnupi-25f7.onrender.com/evaluate");
+
+        const FALLBACK_API_URL =
+            PRIMARY_API_URL.includes("5000")
+                ? "https://esnupi-25f7.onrender.com/evaluate"
+                : (isLocalHost ? "http://127.0.0.1:5000/evaluate" : null);
+
+        const form = document.getElementById("explanationForm");
+        const topicBox = document.getElementById("topic");
+        const explanationBox = document.getElementById("explanation");
+        const wordCount = document.getElementById("wordCount");
+        const message = document.getElementById("message");
+        const submitButton = document.getElementById("submitButton");
+        const resultSection = document.getElementById("result");
+
+        explanationBox.addEventListener("input", function () {
+            const text = explanationBox.value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            wordCount.textContent = "Words: " + words;
+        });
+
+        function fillList(elementId, items) {
+            const list = document.getElementById(elementId);
+            list.replaceChildren();
+
+            if (!Array.isArray(items) || items.length === 0) {
+                const item = document.createElement("li");
+                item.textContent = "None provided.";
+                list.appendChild(item);
+                return;
+            }
+
+            items.forEach(function (value) {
+                const item = document.createElement("li");
+                item.textContent = String(value);
+                list.appendChild(item);
+            });
+        }
+
+        async function sendEvaluationRequest(endpoint, topic, explanation) {
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    topic: topic,
+                    answer: explanation
+                })
+            });
+
+            let data = null;
+            const contentType = response.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+                try {
+                    data = await response.json();
+                } catch (parseErr) {
+                    console.error("JSON parse error:", parseErr);
+                }
+            } else {
+                const text = await response.text();
+                try {
+                    data = JSON.parse(text);
+                } catch (_) {
+                    // Response is not JSON
+                }
+            }
+
+            if (!response.ok) {
+                const serverError =
+                    (data && data.error) ||
+                    `The evaluation request failed (${response.status} ${response.statusText}).`;
+                throw new Error(serverError);
+            }
+
+            if (!data || typeof data.score !== "number") {
+                throw new Error(
+                    (data && data.error) || "The evaluator did not return a valid score."
+                );
+            }
+
+            return data;
+        }
+
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const topic = topicBox.value.trim();
+            const explanation = explanationBox.value.trim();
+
+            if (!topic || !explanation) {
+                message.textContent = "Please fill in both fields.";
+                return;
+            }
+
+            const words = explanation.split(/\s+/).length;
+
+            if (words < 10) {
+                message.textContent =
+                    "Please explain your topic using at least 10 words.";
+                return;
+            }
+
+            resultSection.hidden = true;
+            message.textContent =
+                "🚂 Evaluating your explanation...";
+
+            submitButton.disabled = true;
+            submitButton.textContent = "Evaluating...";
+
+            try {
+                let data = null;
+
+                try {
+                    data = await sendEvaluationRequest(PRIMARY_API_URL, topic, explanation);
+                } catch (primaryErr) {
+                    // If primary endpoint failed due to network / CORS and a fallback exists, try fallback
+                    if (FALLBACK_API_URL && (primaryErr.name === "TypeError" || primaryErr.message.includes("fetch"))) {
+                        console.warn("Primary endpoint unreachable, trying fallback:", FALLBACK_API_URL, primaryErr);
+                        data = await sendEvaluationRequest(FALLBACK_API_URL, topic, explanation);
+                    } else {
+                        throw primaryErr;
+                    }
+                }
+
+                document.getElementById("score").textContent =
+                    data.score + "/100";
+
+                document.getElementById("status").textContent =
+                    data.passed
+                        ? "🎉 Station passed! Great understanding."
+                        : "🌱 Keep learning! Review the feedback and try again.";
+
+                document.getElementById("feedback").textContent =
+                    data.feedback || "No feedback was provided.";
+
+                fillList("strengths", data.strengths);
+                fillList("missingConcepts", data.missing_concepts);
+
+                resultSection.hidden = false;
+                message.textContent =
+                    "Evaluation complete! You wrote " + words + " words.";
+
+            } catch (error) {
+                console.error("Evaluation error:", error);
+
+                let hint = "We couldn't evaluate your answer. ";
+                if (error.name === "TypeError" && error.message.toLowerCase().includes("fetch")) {
+                    hint += "The service could not be reached. If testing locally, make sure python app.py is running. If using Render, ensure the latest CORS deployment has finished. ";
+                } else {
+                    hint += "The service may be waking up, or a connection configuration may need fixing. ";
+                }
+
+                message.textContent =
+                    hint + "Please try again. (" + error.message + ")";
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = "Submit explanation";
+            }
+        });
+    </script>
+</body>
+</html>
