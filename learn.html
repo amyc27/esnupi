@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explain What You Learned | onTrack</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f3ed;
+            color: #24332b;
+        }
+
+        header {
+            background: white;
+            padding: 22px 8%;
+            border-bottom: 1px solid #e5e5df;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        header span { color: #39845c; }
+
+        main {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 24px;
+        }
+
+        a { color: #39845c; }
+
+        .card {
+            margin-top: 24px;
+            background: white;
+            border: 1px solid #e5e5df;
+            border-radius: 18px;
+            padding: 32px;
+        }
+
+        label {
+            display: block;
+            margin: 20px 0 8px;
+            font-weight: bold;
+        }
+
+        input, textarea {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #cfd7d0;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 170px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        button {
+            margin-top: 18px;
+            padding: 13px 20px;
+            background: #39845c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover { background: #286943; }
+
+        #message {
+            margin-top: 18px;
+            line-height: 1.6;
+            color: #286943;
+        }
+
+        .hint {
+            color: #65736a;
+            line-height: 1.6;
+        }
+
+        .progress-container {
+    width: 100%;
+    height: 8px;
+    background: #e5e5df;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    width: 33.33%;
+    height: 100%;
+    background: #39845c;
+    border-radius: 10px;
+}
+    </style>
+</head>
+<body>
+    <header>on<span>Track</span></header>
+
+    <main>
+        <a href="stations.html">← Back to stations</a>
+
+        <section class="card">
+           <p><strong>STATION 1 · YOUR TURN TO TEACH</strong></p>
+
+<div class="progress-container">
+    <div class="progress-bar"></div>
+</div>
+
+<p class="hint">Station 1 of 3 · Learning in progress</p>
+            <h1>Explain what you learned</h1>
+            <p class="hint">
+                Imagine you're teaching this concept to a friend.
+                Explain it in your own words, using an example if you can.
+            </p>
+
+            <form id="explanationForm">
+                <label for="topic">What topic did you study?</label>
+                <input
+                    id="topic"
+                    name="topic"
+                    placeholder="e.g. Photosynthesis"
+                    required
+                >
+
+                <label for="explanation">Explain the concept</label>
+                <textarea
+    id="explanation"
+    name="explanation"
+    placeholder="I learned that..."
+    required
+></textarea>
+<p id="wordCount">Words: 0</p>
+<p class="hint">Tip: Aim for at least 30 words. Explain how it works and give an example.</p>
+
+                <button type="submit">Submit explanation</button>
+            </form>
+
+            <p id="message" aria-live="polite"></p>
+        </section>
+    </main>
+
+    <script>
+        const explanationBox = document.getElementById("explanation");
+const wordCount = document.getElementById("wordCount");
+
+explanationBox.addEventListener("input", function () {
+    const text = explanationBox.value.trim();
+
+    const words = text === ""
+        ? 0
+        : text.split(/\s+/).length;
+
+    wordCount.textContent = "Words: " + words;
+});
+        document.getElementById("explanationForm")
+            .addEventListener("submit", function(event) {
+                event.preventDefault();
+
+                const topic = document.getElementById("topic").value.trim();
+                const explanation = document.getElementById("explanation").value.trim();
+
+                if (!topic || !explanation) {
+                    document.getElementById("message").textContent =
+                        "Please fill in both fields.";
+                    return;
+                }
+
+                const words = explanation.split(/\s+/).length;
+
+document.getElementById("message").textContent =
+    "Explanation received for " + topic +
+    "! You wrote " + words +
+    " words. AI evaluation will be added next.";
+            });
+    </script>
+</body>
+</html>
